@@ -13,7 +13,7 @@
 
 #include "gpio.h"     // 초음파
 #include "spi.h"      // 조도, 압력
-#include <wiringPi.h> // 온습도
+#include <wiringPi.h> // 온습도  (컴파일시 -lwiringPi 옵션 추가)
 
 #define bool   _Bool
 #define false  0
