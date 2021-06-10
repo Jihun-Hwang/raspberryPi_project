@@ -185,7 +185,7 @@ void sense_temp_and_hum(){
 					count++;   // 우선 이 반복문을 첫번째 진입할 때에는 1이 읽힌 상태임
 					delayMicroseconds(1);
 
-					// 안쪽 for문은 8bit를 읽는데 1이 오랫동안 지속되어
+					// 안쪽 for문은 8bit를 읽는데, 만약 1이 오랫동안 지속되어
 					// 0b1111 1111 (255) 이면 더이상 읽을 필요가 없음 
 					if(count > 255) break;
 				}while(digitalRead(DHT_GPIO) == HIGH);
