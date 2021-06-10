@@ -11,9 +11,9 @@
 #include <pthread.h>
 #include <signal.h>
 
-#include "gpio.h"
-#include "spi.h"
-#include <wiringPi.h>
+#include "gpio.h"     // 초음파
+#include "spi.h"      // 조도, 압력
+#include <wiringPi.h> // 온습도
 
 #define bool   _Bool
 #define false  0
@@ -30,14 +30,23 @@
 
 // spi
 static const char* DEVICE = "/dev/spidev0.0";
-bool isSystemStart = false;
+
+// 아래 5개의 변수는 센싱 결과 값을 저장하기 위한 용도임
 int press_result = -1, oxygen_result = -1, light_result = -1;
 int humid_result = -1, temp_result = -1;
+
+// 서버와의 소켓통신을 위한 소켓의 FD
 int sock;
+
+// mainPI의 on/off 버튼이 눌린 횟수에 따라 시스템을 중지할지 말지를 결정한다.
+// on/off 버튼값을 읽어오는 쓰레드가 따로 존재하고 isSystemStart를 전역변수로 둠으로써
+// 쓰레드간 값을 공유해 센싱을 중지 or 재개한다.
 int switchCount = 1;
+bool isSystemStart = false;
 
 /**
- * ctrl + c 에 대한 시그널 핸들러
+ * ctrl + c 에 대한 시그널 핸들러 정의
+ * 소켓 통신 및 프로세스가 안전하게 종료되도록 한다.
  */
 void exit_handler(int sig){
 	close(sock);
@@ -51,6 +60,11 @@ void error_handling(char *message){
 	exit(1);
 }
 
+/**
+ *  초음파센서(센소대체)는 GPIO를 이용하고 두개의 구멍(하나는 IN 하나는 OUT)으로 통과하는 
+ *  시간을 측정하고, 거리 = 시간 * 속력 공식을 이용해 거리를 측정한다.
+ *  이때 왔다 갔다 걸린 시간은 벽을 찍는데 걸리는 시간의 2배이므로 공식에 대입할 때에는 시간의 0.5배를 적용해야 한다.
+ */
 void sense_ultrawave(){
 	clock_t start_t, end_t;
 	double time;
@@ -89,7 +103,7 @@ void sense_ultrawave(){
 	}
 
 	time = (double)(end_t - start_t)/CLOCKS_PER_SEC; // ms
-	oxygen_result = time/2 * 34000;
+	oxygen_result = time/2 * 34000;   // time은 왔다 갔다 시간이므로 /2를 해줘야 함
 
 	if(oxygen_result > 900) oxygen_result = 900;
 
@@ -100,9 +114,12 @@ void sense_ultrawave(){
 		printf("GPIOUnexport fail\n");
 }
 
+/**
+ * 서버와 소켓통신하기 위해 연결요청을 하는 함수
+ */
 static void usingSocket(int *sock, char* inputServerInfo[], struct sockaddr_in* serv_addr){
 	*sock = socket(PF_INET, SOCK_STREAM, 0);
-	if(*sock == -1)   // socket fd == -1
+	if(*sock == -1)
 		error_handling("socket() error");
 
 	memset(serv_addr, 0, sizeof(struct sockaddr_in));
@@ -110,6 +127,7 @@ static void usingSocket(int *sock, char* inputServerInfo[], struct sockaddr_in* 
 	serv_addr->sin_addr.s_addr = inet_addr(inputServerInfo[1]);
 	serv_addr->sin_port = htons(atoi(inputServerInfo[2]));
 
+	// sensorPI는 client입장이므로 미리 listen하고 있는 서버가 있어야한다
 	if(connect(*sock, (struct sockaddr*)serv_addr, sizeof(struct sockaddr)) == -1)
 		error_handling("connect() error");
 
@@ -127,8 +145,10 @@ void sense_press_and_light() {
 	if (prepareSpi(fd) == -1) {
 		return;
 	}
+	// 아날로그 값 -> 디지털 값
+	// ADC에 물린 2개의 slave로 부터 데이터를 읽는다.
 	press_result = readadc(fd, 0);   // 채널 0번으로 부터 읽음
-	light_result = readadc(fd, 6);
+	light_result = readadc(fd, 6);   // 채널 6번으로 부터 읽음
 
 	close(fd);
 }
