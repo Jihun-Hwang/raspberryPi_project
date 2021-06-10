@@ -141,14 +141,20 @@ void sense_press_and_light() {
 void sense_temp_and_hum(){
 	bool isValid = false;
 
+	// GPIO 핀 번호를 기준으로 센서와 데이터를 주고받는다
+	// Wiring 번호를 기준으로 하고싶다면 wiringPiSetup()을 호출한다
 	wiringPiSetupGpio();
-	piHiPri(99); // 타이밍 코드를 위해 가장 높은 우선 순위 사용
+
+	// DHT11의 특성상 시간에 맞춰 데이터를 주기때문에
+	// 이 프로그램이 항상 스케쥴링되어야 유효한 데이터를 받아올 가능성이 크다
+	// 따라서 스케쥴링 우선순위를 높여준다
+	piHiPri(99);
 
 	while(isValid == false){
 		// bit or (|) 연산을 위해 반드시 0으로 초기화 해야함
 		unsigned char data[5] = { 0, };
 
-		// 시작 준비 신호 보내기 pull pin down for 18 milliseconds
+		// 시작 준비 신호 보내기 (pull pin down for 18 milliseconds)
 		pinMode(DHT_GPIO, OUTPUT);
 		digitalWrite(DHT_GPIO, LOW);
 		delay(18);  // 최소 0.018초 동안 유지
@@ -156,7 +162,7 @@ void sense_temp_and_hum(){
 		digitalWrite(DHT_GPIO, HIGH);
 		pinMode(DHT_GPIO, INPUT);
 
-		// 시작 신호 받기 준비 과정
+		// 시작 신호에 대한 응답 받기 과정
 		do{
 			delayMicroseconds(1);
 		} while(digitalRead(DHT_GPIO) == HIGH);
