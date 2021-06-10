@@ -145,9 +145,10 @@ void sense_temp_and_hum(){
 	piHiPri(99); // 타이밍 코드를 위해 가장 높은 우선 순위 사용
 
 	while(isValid == false){
+		// bit or (|) 연산을 위해 반드시 0으로 초기화 해야함
 		unsigned char data[5] = { 0, };
 
-		// 시작 준비 신호 보내기 ull pin down for 18 milliseconds
+		// 시작 준비 신호 보내기 pull pin down for 18 milliseconds
 		pinMode(DHT_GPIO, OUTPUT);
 		digitalWrite(DHT_GPIO, LOW);
 		delay(18);  // 최소 0.018초 동안 유지
