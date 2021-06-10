@@ -167,14 +167,14 @@ void sense_temp_and_hum(){
 					delayMicroseconds(1);
 				}while(digitalRead(DHT_GPIO) == LOW); // Low 무시
 
-			int width = 0;
-			do{  // HIGH가 지속될 경우 무효
-				width++;
-				delayMicroseconds(1);
-				if(width > 1000) break;
-			}while(digitalRead(DHT_GPIO) == HIGH);
+				int width = 0;
+				do{  // HIGH가 지속될 경우 무효
+					width++;
+					delayMicroseconds(1);
+					if(width > 1000) break;
+				}while(digitalRead(DHT_GPIO) == HIGH);
 
-			data[dataIdx] = data[dataIdx] | ((width > LH_THRESHOLD) << (7-bit));
+				data[dataIdx] = data[dataIdx] | ((width > LH_THRESHOLD) << (7-bit));
 			}
 		}
 
