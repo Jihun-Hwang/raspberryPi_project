@@ -190,7 +190,7 @@ void sense_temp_and_hum(){
 					if(count > 255) break;
 				}while(digitalRead(DHT_GPIO) == HIGH);
 
-				// 1이 26번 이상 반복되었다면 bit 값을 1로, 그렇지 않다면 0으로 판단함
+				// 1이 26번 이상 반복되었다면 bit 값을 1로, 그렇지 않다면 0으로 판단함(펄스의 폭과 연관됨)
 				// 그리고 읽은 bit 값을 shifting하여 MSB부터 LSB순으로 순서대로 채워가기
 				data[dataIdx] = data[dataIdx] | ((count > LOWHIGH_THRESHOLD) << (7-bit));
 			}
