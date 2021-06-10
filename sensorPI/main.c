@@ -26,7 +26,7 @@
 // 온습도 센서 관련
 #define USING_DHT11 true
 #define DHT_GPIO 17
-#define LH_THRESHOLD 26
+#define LOWHIGH_THRESHOLD 26
 
 // spi
 static const char* DEVICE = "/dev/spidev0.0";
@@ -133,6 +133,11 @@ void sense_press_and_light() {
 	close(fd);
 }
 
+/**
+ * REFERENCE : https://blog.naver.com/jyoun/220711233140
+ * 파이와 센서간 사전 준비 후 8bit씩 5번 데이터를 받아온다.
+ * 마지막 1byte는 패리티비트로써 데이터의 유효성 검사에 사용된다.
+ */
 void sense_temp_and_hum(){
 	bool isValid = false;
 
@@ -142,14 +147,15 @@ void sense_temp_and_hum(){
 	while(isValid == false){
 		unsigned char data[5] = { 0, };
 
-		// 시작 신호 보내기
+		// 시작 준비 신호 보내기 ull pin down for 18 milliseconds
 		pinMode(DHT_GPIO, OUTPUT);
 		digitalWrite(DHT_GPIO, LOW);
 		delay(18);  // 최소 0.018초 동안 유지
+
 		digitalWrite(DHT_GPIO, HIGH);
 		pinMode(DHT_GPIO, INPUT);
 
-		// 시작 신호 받기
+		// 시작 신호 받기 준비 과정
 		do{
 			delayMicroseconds(1);
 		} while(digitalRead(DHT_GPIO) == HIGH);
@@ -167,26 +173,33 @@ void sense_temp_and_hum(){
 					delayMicroseconds(1);
 				}while(digitalRead(DHT_GPIO) == LOW); // Low 무시
 
-				int width = 0;
-				do{  // HIGH가 지속될 경우 무효
-					width++;
+				int count = 0;
+				do{
+					count++;   // 우선 이 반복문을 첫번째 진입할 때에는 1이 읽힌 상태임
 					delayMicroseconds(1);
-					if(width > 1000) break;
+
+					// 안쪽 for문은 8bit를 읽는데 1이 오랫동안 지속되어
+					// 0b1111 1111 (255) 이면 더이상 읽을 필요가 없음 
+					if(count > 255) break;
 				}while(digitalRead(DHT_GPIO) == HIGH);
 
-				data[dataIdx] = data[dataIdx] | ((width > LH_THRESHOLD) << (7-bit));
+				// 1이 26번 이상 반복되었다면 bit 값을 1로, 그렇지 않다면 0으로 판단함
+				// 그리고 읽은 bit 값을 shifting하여 MSB부터 LSB순으로 순서대로 채워가기
+				data[dataIdx] = data[dataIdx] | ((count > LOWHIGH_THRESHOLD) << (7-bit));
 			}
 		}
 
 		// 유효성 검사
 		unsigned char sum = 0;
 		for(int i = 0; i < 4; i++){
+			// 마지막 1byte를 제외한 4byte의 합을 이용해 유효성 검사를 하기 위한 코드
+			// 마지막 1byte는 패리티 비트이다
 			sum += data[i];
 		}
 
-		if(sum == data[4]){   // 데이터가 유효한 경우 (data[4] : 패리티 비트)
+		if(sum == data[4]){   // 데이터가 유효한지 판단 조건 (data[4] : 패리티 비트)
 			isValid = true;
-			temp_result = data[2];  // 소수점 무시 (온도 소수점 윗자리)
+			temp_result = data[2];    // 소수점 무시 (온도 소수점 윗자리)
 			humid_result = data[0];   // 소수점 무시 (습도 소수점 윗자리)
 		}else{
 			sleep(2);
