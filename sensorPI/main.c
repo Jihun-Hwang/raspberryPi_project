@@ -161,6 +161,7 @@ void sense_press_and_light() {
 void sense_temp_and_hum(){
 	// bit or (|) 연산을 위해 반드시 0으로 초기화 해야함
 	unsigned char data[5] = { 0, };
+	int laststate = HIGH;
 
 	// GPIO 핀 번호를 기준으로 센서와 데이터를 주고받는다
 	// Wiring 번호를 기준으로 하고싶다면 wiringPiSetup()을 호출한다
@@ -180,32 +181,32 @@ void sense_temp_and_hum(){
 	pinMode(DHT_GPIO, INPUT);
 
 	// 시작 신호에 대한 응답 받기 과정
-	do{
+	while(digitalRead(DHT_GPIO) == HIGH)
 		delayMicroseconds(1);
-	} while(digitalRead(DHT_GPIO) == HIGH);
-	do{
+	while(digitalRead(DHT_GPIO) == LOW)
 		delayMicroseconds(1);
-	} while(digitalRead(DHT_GPIO) == LOW);
-	do{
-		delayMicroseconds(1);
-	} while(digitalRead(DHT_GPIO) == HIGH);
+	while(digitalRead(DHT_GPIO) == HIGH)
+		delayMicroseconds(1);	
 
 	// actual 데이터 받기
 	for(int dataIdx = 0; dataIdx < 5; dataIdx++){
 		for(int bit = 0 ; bit < 8; bit++){  // 8bit씩
-			do {
+			while(digitalRead(DHT_GPIO) == LOW)   // 1부터 읽을 것
 				delayMicroseconds(1);
-			}while(digitalRead(DHT_GPIO) == LOW); // Low 무시
 
 			int count = 0;
-			do{
-				count++;   // 우선 이 반복문을 첫번째 진입할 때에는 1이 읽힌 상태임
-				delayMicroseconds(1);
+        	while (digitalRead(DHT_GPIO) == laststate) { // 같은게 8bit 나오는지 검사함
+            	count++;
+            	delayMicroseconds(1);
+            	if (count == 255) { // 모두 1111 1111 이거나 0000 0000 인 경우
+                	break;
+            	}
+        	}
 
-				// 안쪽 for문은 8bit를 읽는데, 만약 1이 오랫동안 지속되어
-				// 0b1111 1111 (255) 이면 더이상 읽을 필요가 없음 
-				if(count > 255) break;
-			}while(digitalRead(DHT_GPIO) == HIGH);
+			laststate = digitalRead(DHT_GPIO);
+
+			if (count == 255)
+            	break;
 
 			// 1이 26번 이상 반복되었다면 bit 값을 1로, 그렇지 않다면 0으로 판단함(펄스의 폭과 연관됨)
 			// 그리고 읽은 bit 값을 shifting하여 MSB부터 LSB순으로 순서대로 채워가기
