@@ -159,7 +159,8 @@ void sense_press_and_light() {
  * 마지막 1byte는 패리티비트로써 데이터의 유효성 검사에 사용된다.
  */
 void sense_temp_and_hum(){
-	bool isValid = false;
+	// bit or (|) 연산을 위해 반드시 0으로 초기화 해야함
+	unsigned char data[5] = { 0, };
 
 	// GPIO 핀 번호를 기준으로 센서와 데이터를 주고받는다
 	// Wiring 번호를 기준으로 하고싶다면 wiringPiSetup()을 호출한다
@@ -170,69 +171,64 @@ void sense_temp_and_hum(){
 	// 따라서 스케쥴링 우선순위를 높여준다
 	piHiPri(99);
 
-	while(isValid == false){
-		// bit or (|) 연산을 위해 반드시 0으로 초기화 해야함
-		unsigned char data[5] = { 0, };
+	// 시작 준비 신호 보내기 (pull pin down for 18 milliseconds)
+	pinMode(DHT_GPIO, OUTPUT);
+	digitalWrite(DHT_GPIO, LOW);
+	delay(18);  // 최소 0.018초 동안 유지
 
-		// 시작 준비 신호 보내기 (pull pin down for 18 milliseconds)
-		pinMode(DHT_GPIO, OUTPUT);
-		digitalWrite(DHT_GPIO, LOW);
-		delay(18);  // 최소 0.018초 동안 유지
+	digitalWrite(DHT_GPIO, HIGH);
+	pinMode(DHT_GPIO, INPUT);
 
-		digitalWrite(DHT_GPIO, HIGH);
-		pinMode(DHT_GPIO, INPUT);
+	// 시작 신호에 대한 응답 받기 과정
+	do{
+		delayMicroseconds(1);
+	} while(digitalRead(DHT_GPIO) == HIGH);
+	do{
+		delayMicroseconds(1);
+	} while(digitalRead(DHT_GPIO) == LOW);
+	do{
+		delayMicroseconds(1);
+	} while(digitalRead(DHT_GPIO) == HIGH);
 
-		// 시작 신호에 대한 응답 받기 과정
-		do{
-			delayMicroseconds(1);
-		} while(digitalRead(DHT_GPIO) == HIGH);
-		do{
-			delayMicroseconds(1);
-		} while(digitalRead(DHT_GPIO) == LOW);
-		do{
-			delayMicroseconds(1);
-		} while(digitalRead(DHT_GPIO) == HIGH);
+	// actual 데이터 받기
+	for(int dataIdx = 0; dataIdx < 5; dataIdx++){
+		for(int bit = 0 ; bit < 8; bit++){  // 8bit씩
+			do {
+				delayMicroseconds(1);
+			}while(digitalRead(DHT_GPIO) == LOW); // Low 무시
 
-		// actual 데이터 받기
-		for(int dataIdx = 0; dataIdx < 5; dataIdx++){
-			for(int bit = 0 ; bit < 8; bit++){  // 8bit씩
-				do {
-					delayMicroseconds(1);
-				}while(digitalRead(DHT_GPIO) == LOW); // Low 무시
+			int count = 0;
+			do{
+				count++;   // 우선 이 반복문을 첫번째 진입할 때에는 1이 읽힌 상태임
+				delayMicroseconds(1);
 
-				int count = 0;
-				do{
-					count++;   // 우선 이 반복문을 첫번째 진입할 때에는 1이 읽힌 상태임
-					delayMicroseconds(1);
+				// 안쪽 for문은 8bit를 읽는데, 만약 1이 오랫동안 지속되어
+				// 0b1111 1111 (255) 이면 더이상 읽을 필요가 없음 
+				if(count > 255) break;
+			}while(digitalRead(DHT_GPIO) == HIGH);
 
-					// 안쪽 for문은 8bit를 읽는데, 만약 1이 오랫동안 지속되어
-					// 0b1111 1111 (255) 이면 더이상 읽을 필요가 없음 
-					if(count > 255) break;
-				}while(digitalRead(DHT_GPIO) == HIGH);
-
-				// 1이 26번 이상 반복되었다면 bit 값을 1로, 그렇지 않다면 0으로 판단함(펄스의 폭과 연관됨)
-				// 그리고 읽은 bit 값을 shifting하여 MSB부터 LSB순으로 순서대로 채워가기
-				data[dataIdx] = data[dataIdx] | ((count > LOWHIGH_THRESHOLD) << (7-bit));
-			}
-		}
-
-		// 유효성 검사
-		unsigned char sum = 0;
-		for(int i = 0; i < 4; i++){
-			// 마지막 1byte를 제외한 4byte의 합을 이용해 유효성 검사를 하기 위한 코드
-			// 마지막 1byte는 패리티 비트이다
-			sum += data[i];
-		}
-
-		if(sum == data[4]){   // 데이터가 유효한지 판단 조건 (data[4] : 패리티 비트)
-			isValid = true;
-			temp_result = data[2];    // 소수점 무시 (온도 소수점 윗자리)
-			humid_result = data[0];   // 소수점 무시 (습도 소수점 윗자리)
-		}else{
-			sleep(2);
-			//printf("checksum fail!\n");
+			// 1이 26번 이상 반복되었다면 bit 값을 1로, 그렇지 않다면 0으로 판단함(펄스의 폭과 연관됨)
+			// 그리고 읽은 bit 값을 shifting하여 MSB부터 LSB순으로 순서대로 채워가기
+			data[dataIdx] = data[dataIdx] | ((count > LOWHIGH_THRESHOLD) << (7-bit));
 		}
 	}
+
+	// 유효성 검사
+	unsigned char sum = 0;
+	for(int i = 0; i < 4; i++){
+		// 마지막 1byte를 제외한 4byte의 합을 이용해 유효성 검사를 하기 위한 코드
+		// 마지막 1byte는 패리티 비트이다
+		sum += data[i];
+	}
+
+	if(sum == data[4]){   // 데이터가 유효한지 판단 조건 (data[4] : 패리티 비트)
+		temp_result = data[2];    // 소수점 무시 (온도 소수점 윗자리)
+		humid_result = data[0];   // 소수점 무시 (습도 소수점 윗자리)
+	}else{
+		sleep(2);
+		printf("checksum fail!\n");
+	}
+
 }
 
 /**
