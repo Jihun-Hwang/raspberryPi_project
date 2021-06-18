@@ -1,4 +1,3 @@
-
 # 나만의 독서실
 
 System / Embedded Programming Project
@@ -141,7 +140,7 @@ System / Embedded Programming Project
 # References
 
 - DHT11(온습도센서) 데이터시트:
-htps:/www.mouser.com/datasheet/2/758/DHT11-Technical-Data-Sheet-Translated-Version-1143054.pdf
+https:/www.mouser.com/datasheet/2/758/DHT11-Technical-Data-Sheet-Translated-Version-1143054.pdf
 - Reference Python Code for i2c:
 https://bitbucket.org/MattHawkinsUK/rpispy-misc/raw/master/python/lcd_i2c.py
 - Reference C Code for i2c bus opening :
