@@ -1,14 +1,8 @@
 # 나만의 독서실
+> System / Embedded Programming Project
 
-System / Embedded Programming Project
+[시연 영상 보기](https://www.youtube.com/watch?v=j0Dk9-GmF0s)
 
-시연 영상 >> [https://www.youtube.com/watch?v=j0Dk9-GmF0s](https://www.youtube.com/watch?v=j0Dk9-GmF0s)
-
-<div align="center">
-    
-![1](https://user-images.githubusercontent.com/55920132/122646401-eb01f280-d159-11eb-9c51-360a6dda8213.png)
-    
-</div>
 
 # 1. 개요
 
@@ -67,7 +61,7 @@ System / Embedded Programming Project
 
 </div>
 
-< 센서 Pi - 관리자 영역 >
+#### 센서 Pi - 관리자 영역
 
 주된 목적이 센싱이기 때문에, 센서들과 가장 가까운 곳에 위치시키고, 센싱 알고리즘의 변경에 의한 센싱오류 등의 문제를 방지하기 위해 관리자 영역으로 설정합니다.
 
@@ -75,7 +69,7 @@ System / Embedded Programming Project
 2. 압력 센서를 통해 사용자의 착석 여부를 확인하여 신호를 전송합니다.
 3. 산소 센서를 이용하여 실내 산소 농도를 측정하고, 일정 기준 이하일 경우 메인 파이로 신호를 보냅니다.
 
-< 메인 Pi - 사용자 영역 >
+#### 메인 Pi - 사용자 영역
 
 메인 Pi 의 주된 목적은 센싱값에 따른 엑츄레이터의 동작여부를 결정 하는 것입니다.
 만약 사용자가 필요하다면, 제한된 기능에 내에서 UI 를 통해 수정을 허용합니다.
@@ -86,9 +80,9 @@ System / Embedded Programming Project
 2. 수신한 신호가 적정 범위에 있는지를 확인합니다.
 3. 신호가 적정 범위를 벗어난 경우 이를 제어하기 위해 Actuator Pi 에 신호를 전송합니다.
 
-< Actuator Pi - 관리자 영역>
+#### Actuator Pi - 관리자 영역
 
-- 주된 목적이 엑츄레이터 작동이기 때문에, 엑츄레이터들과 가장 가까운 곳에 위치시키고, 동작 알고리즘의 변경에 의한 동작 오류 등의 문제를 방지하기 위해 관리자 영역으로 설정합니다.
+주된 목적이 엑츄레이터 작동이기 때문에, 엑츄레이터들과 가장 가까운 곳에 위치시키고, 동작 알고리즘의 변경에 의한 동작 오류 등의 문제를 방지하기 위해 관리자 영역으로 설정합니다.
 1. 메인 Pi 로부터 제어 신호를 수신합니다.
 2. 수신한 신호에 맞는 센서에 적정 신호를 송출하여 LCD, LED, 서보모터를 비롯한 액추에이터를 작동합니다.
 
@@ -118,7 +112,7 @@ System / Embedded Programming Project
     
 </div>
 
-# 시스템 구성
+# 시스템 구조
 
 <div align="center">
 
@@ -141,8 +135,8 @@ System / Embedded Programming Project
 # References
 
 - DHT11(온습도센서) 데이터시트:
-https:/www.mouser.com/datasheet/2/758/DHT11-Technical-Data-Sheet-Translated-Version-1143054.pdf
-- Reference Python Code for i2c:
+https://www.mouser.com/datasheet/2/758/DHT11-Technical-Data-Sheet-Translated-Version-1143054.pdf
+- Python Code for i2c:
 https://bitbucket.org/MattHawkinsUK/rpispy-misc/raw/master/python/lcd_i2c.py
-- Reference C Code for i2c bus opening :
+- C Code for i2c bus opening :
 https://raspberry-projects.com/pi/programming-in-c/i2c/using-the-i2c-interface
