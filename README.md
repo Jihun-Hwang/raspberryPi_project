@@ -57,7 +57,7 @@
 
 <div align="center">
     
-<img width="1021" alt="2" src="https://user-images.githubusercontent.com/55920132/122646403-eccbb600-d159-11eb-8c4f-6e06d3bffb31.png">
+<img width="960" alt="시스템개요" src="https://user-images.githubusercontent.com/55920132/124630229-2ec85c00-debd-11eb-8681-20469f856d0a.png">
 
 </div>
 
@@ -116,7 +116,7 @@
 
 <div align="center">
 
-<img width="1020" alt="4" src="https://user-images.githubusercontent.com/55920132/122646408-f0f7d380-d159-11eb-8aa1-aaee7ffb1e2f.png">
+<img width="960" alt="시스템구조" src="https://user-images.githubusercontent.com/55920132/124630234-2ff98900-debd-11eb-8a78-ab6f8eea566a.png">
     
 </div>
 
